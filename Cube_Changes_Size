@@ -1,0 +1,172 @@
+//FPS Controller Script:
+
+public class FPSController : MonoBehaviour
+{
+
+    //VARIAVEIS
+    public CharacterController controlador;
+    public float rapidez = 5f;
+    public float gravidade = -30f;
+    public float alturaPulo = 3f;
+    //VARIAVEIS CHEGAR PULO
+    public Transform checarChao;
+    public float distanciaChao = 0.4f;
+    public LayerMask mascaraChao;
+
+    Vector3 velocidade = Vector3.zero;
+    bool isGrounded;
+
+    // Update is called once per frame
+    void Update()
+    {
+        movimento();
+    }
+
+    void movimento()
+    {
+        isGrounded = Physics.CheckSphere(checarChao.position, distanciaChao, mascaraChao);
+
+        if (isGrounded && velocidade.y < 0)
+        {
+            velocidade.y = -2f;
+        }
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+
+        Vector3 move = transform.right * x + transform.forward * z;
+        controlador.Move(move * rapidez * Time.deltaTime);
+
+        if (Input.GetKeyDown("space") && isGrounded)
+        {
+            velocidade.y = Mathf.Sqrt(alturaPulo * -2f * gravidade);
+        }
+
+        velocidade.y += gravidade * Time.deltaTime;
+        controlador.Move(velocidade * Time.deltaTime);
+
+        if (Input.GetKeyDown ("left shift") && isGrounded)
+        {
+            rapidez = rapidez * 2;
+        }
+
+        if (Input.GetKeyUp("left shift") && isGrounded)
+        {
+            rapidez = 5f;
+        }
+    }
+}
+
+~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#
+
+//Camera Script:
+
+public class MouseLook : MonoBehaviour
+{
+    //VARIAVEIS
+    public float mouseSensibilidade = 350;
+    public Transform jogadorCorpo;
+    float xRotacao = 0f;
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        mouseLook();
+    }
+
+    void mouseLook()
+    {
+        //ADICIONANDO O INPUT DO MOUSE E DEFININDO A SENSIBILIDADE
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensibilidade * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensibilidade * Time.deltaTime;
+
+        //LIMITANDO A ROTAÇÃO NO EIXO Y, PARA O MOUSE NÃO "DAR UMA VOLTA EM TORNO DE SI MESMO"
+        xRotacao -= mouseY;
+        xRotacao = Mathf.Clamp(xRotacao, -90f, 90);
+
+        //ROTACIONANDO A CÂMERA NO EIXO X E O CORPO DO PERSONAGEM
+        transform.localRotation = Quaternion.Euler (xRotacao, 0f, 0f);
+        jogadorCorpo.Rotate(Vector3.up * mouseX);
+    }
+}
+
+~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#~~~~~~~~~~~~~~~~~~#
+
+//Cube Script:
+
+public class Pega : MonoBehaviour
+{
+    public float forcaJoga = 600;
+    public float distancia;
+    Vector3 posObjeto;
+
+    public bool podeSegurar = true;
+    public bool estaSegurando = false;
+    public GameObject item;
+    public GameObject parentesco;
+
+    // Update is called once per frame
+    void Update()
+    {
+        pegaJoga();
+    }
+
+    void pegaJoga()
+    {
+        distancia = Vector3.Distance(item.transform.position, parentesco.transform.position);
+
+        if (distancia > 3f)
+        {
+            estaSegurando = false;
+        }
+
+        if (estaSegurando == true)
+        {
+            item.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            item.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+            item.transform.SetParent(parentesco.transform);
+
+            if (Input.GetMouseButtonDown(1))
+            {
+                item.GetComponent<Rigidbody>().AddForce(parentesco.transform.forward * forcaJoga);
+                estaSegurando = false;
+            }
+        }
+        else
+        {
+            posObjeto = item.transform.position;
+            item.transform.SetParent(null);
+            item.GetComponent<Rigidbody>().useGravity = true;
+            item.transform.position = posObjeto;
+        }
+
+    }
+
+    void OnMouseDown()
+    {
+        if (distancia <= 3f)
+        {
+            estaSegurando = true;
+            item.GetComponent<Rigidbody>().useGravity = false;
+            item.GetComponent<Rigidbody>().detectCollisions = true;
+        }
+
+    }
+
+    void OnMouseUp()
+    {
+        estaSegurando = false;
+    }
+}
+
+
+
+
+
